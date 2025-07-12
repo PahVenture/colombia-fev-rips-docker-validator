@@ -45,8 +45,9 @@ jobs:
           else
             SRC_IMAGE="crmspsgovcoprd.azurecr.io/production-fevrips-apilocal:${SOURCE_DIGEST}"
           fi
-          # Destination repository derived from the current repo (owner/repo name)
-          DST_REPO="ghcr.io/${{ github.repository_owner }}/$(basename \"$GITHUB_REPOSITORY\")"
+          # Derive fully lowercase owner/repo path for GHCR to satisfy registry requirements
+          REPO_LC=$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')
+          DST_REPO="ghcr.io/${REPO_LC}"
 
           # Generate extra tags
           DATE_TAG=$(date -u +%Y%m%d)
