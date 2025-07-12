@@ -1,0 +1,60 @@
+name: Retag and Push Image
+permissions:
+  contents: read
+  packages: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_digest:
+        description: Digest or tag (or full digest sha256:...) of the source image in ACR
+        required: true
+        default: "latest"
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (required for Actions context)
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: crmspsgovcoprd.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull, retag and push image
+        env:
+          SOURCE_DIGEST: ${{ inputs.source_digest }}
+        run: |
+          set -e
+
+          SRC_IMAGE="crmspsgovcoprd.azurecr.io/production-fevrips-apilocal:${SOURCE_DIGEST}"
+            DST_REPO="ghcr.io/${{ github.repository_owner }}/$(basename $GITHUB_REPOSITORY)"
+
+          # Generate extra tags
+          DATE_TAG=$(date -u +%Y%m%d)
+          RUN_TAG=$GITHUB_RUN_NUMBER
+
+          echo "Pulling $SRC_IMAGE"
+          docker pull "$SRC_IMAGE"
+
+          echo "Tagging for GHCR"
+          docker tag "$SRC_IMAGE" "$DST_REPO:latest"
+          docker tag "$SRC_IMAGE" "$DST_REPO:$DATE_TAG"
+          docker tag "$SRC_IMAGE" "$DST_REPO:$RUN_TAG"
+
+          echo "Pushing tags to GHCR"
+          docker push "$DST_REPO:latest"
+          docker push "$DST_REPO:$DATE_TAG"
+          docker push "$DST_REPO:$RUN_TAG"
