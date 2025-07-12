@@ -1,0 +1,66 @@
+networks:
+    pahventure-net:
+        driver: bridge
+
+services:
+
+    fevrips-db:
+        container_name: fevrips-db
+        image: mcr.microsoft.com/mssql/server:2022-CU12-ubuntu-22.04
+        pull_policy: always
+        environment:
+            - ACCEPT_EULA=Y
+            - MSSQL_SA_PASSWORD=P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@
+            - MSSQL_COLLATION=SQL_Latin1_General_CP1_CI_AS
+        networks:
+          - pahventure-net
+        healthcheck:
+          test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@' -Q 'SELECT 1' || exit 1"]
+          interval: 30s
+          timeout: 10s
+          retries: 5
+          start_period: 30s
+
+    fevrips-api-prod:
+        container_name: fevrips-api-prod
+        image: ghcr.io/pahventure/colombia-fev-rips-docker-validator:latest
+        pull_policy: always
+        environment:
+          - ASPNETCORE_ENVIRONMENT=DockerProduction
+          - ASPNETCORE_URLS=http://+:5100
+          - ConnectionStrings__DefaultConnection=Server=fevrips-db;Database=FEVRIPS-prod;User Id=sa;Password=P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@;TrustServerCertificate=True;
+          - Logging__LogLevel__Default=Information
+        networks:
+          - pahventure-net
+        ports:
+          - "5100:5100"
+        depends_on:   
+          - fevrips-db
+        healthcheck:
+          test: ["CMD-SHELL", "curl -f http://localhost:5100/health || exit 1"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+          start_period: 40s
+
+    fevrips-api-stage:
+        container_name: fevrips-api-stage
+        image: ghcr.io/pahventure/colombia-fev-rips-docker-validator:latest
+        pull_policy: always
+        environment:
+          - ASPNETCORE_ENVIRONMENT=DockerProduction
+          - ASPNETCORE_URLS=http://+:5100
+          - ConnectionStrings__DefaultConnection=Server=fevrips-db;Database=FEVRIPS-stage;User Id=sa;Password=P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@;TrustServerCertificate=True;
+          - Logging__LogLevel__Default=Information
+        networks:
+          - pahventure-net
+        ports:
+          - "5200:5100"
+        depends_on:   
+          - fevrips-db
+        healthcheck:
+          test: ["CMD-SHELL", "curl -f http://localhost:5100/health || exit 1"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+          start_period: 40s
