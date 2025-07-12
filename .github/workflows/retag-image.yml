@@ -39,8 +39,14 @@ jobs:
         run: |
           set -e
 
-          SRC_IMAGE="crmspsgovcoprd.azurecr.io/production-fevrips-apilocal:${SOURCE_DIGEST}"
-            DST_REPO="ghcr.io/${{ github.repository_owner }}/$(basename $GITHUB_REPOSITORY)"
+          # Build correct reference depending on whether a digest or a tag was provided
+          if [[ "$SOURCE_DIGEST" == sha256:* ]]; then
+            SRC_IMAGE="crmspsgovcoprd.azurecr.io/production-fevrips-apilocal@${SOURCE_DIGEST}"
+          else
+            SRC_IMAGE="crmspsgovcoprd.azurecr.io/production-fevrips-apilocal:${SOURCE_DIGEST}"
+          fi
+          # Destination repository derived from the current repo (owner/repo name)
+          DST_REPO="ghcr.io/${{ github.repository_owner }}/$(basename \"$GITHUB_REPOSITORY\")"
 
           # Generate extra tags
           DATE_TAG=$(date -u +%Y%m%d)
