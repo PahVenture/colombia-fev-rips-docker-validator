@@ -3,29 +3,11 @@
 [![CI Status](https://github.com/PahVenture/colombia-fev-rips-docker-validator/actions/workflows/retag-image.yml/badge.svg)](https://github.com/PahVenture/colombia-fev-rips-docker-validator/actions)
 [![Container Image](https://img.shields.io/badge/ghcr.io-pahventure%2Fcolombia--fev--rips--docker--validator-blue?logo=docker)](https://github.com/orgs/PahVenture/packages?tab=packages)
 [![License](https://img.shields.io/github/license/PahVenture/colombia-fev-rips-docker-validator)](LICENSE)
-[![Hosted API](https://img.shields.io/badge/API-Hosted%20Service-green?logo=cloud)](https://fevrips.pahventure.com/services)
 
 **Docker Registry Mirror** for the **FEV RIPS** API & database used to validate and process *Registro Individual de Prestación de Servicios de Salud* (RIPS) records in Colombia.  
 This project creates a synchronized mirror of the original Azure Container Registry (ACR) images, retagging and distributing them via GitHub Container Registry (GHCR) for enhanced availability and notification purposes.
 
 > 🔐 **Security Alert**: The default password `P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@` is provided for development purposes only. **Please change this password immediately** in production environments.
-
----
-
-## 🚀 Quick Start - Hosted API Service
-
-Don't want to self-host? Use our **pay-as-you-go hosted API service**:
-
-### [🔗 Access FEV RIPS API Service](https://fevrips.pahventure.com/services)
-
-[![Use Hosted API](https://img.shields.io/badge/Use-Hosted%20API%20Now-blue?style=for-the-badge&logo=rocket)](https://fevrips.pahventure.com/services)
-
-Our hosted service provides:
-- **No setup required** - Start validating RIPS files immediately
-- **Pay-as-you-go pricing** - Only pay for what you use
-- **Production-ready** - 99.9% uptime SLA
-- **Automatic scaling** - Handles any volume of requests
-- **API documentation** - Complete REST API reference
 
 ---
 
