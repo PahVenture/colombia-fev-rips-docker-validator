@@ -1,222 +1,222 @@
-# Colombia FEV RIPS – Docker Registry Mirror & Validator
+# Colombia FEV RIPS – Espejo de Registro Docker y Validador
 
 [![CI Status](https://github.com/PahVenture/colombia-fev-rips-docker-validator/actions/workflows/retag-image.yml/badge.svg)](https://github.com/PahVenture/colombia-fev-rips-docker-validator/actions)
 [![Container Image](https://img.shields.io/badge/ghcr.io-pahventure%2Fcolombia--fev--rips--docker--validator-blue?logo=docker)](https://github.com/orgs/PahVenture/packages?tab=packages)
 [![License](https://img.shields.io/github/license/PahVenture/colombia-fev-rips-docker-validator)](LICENSE)
 
-**Docker Registry Mirror** for the **FEV RIPS** API & database used to validate and process *Registro Individual de Prestación de Servicios de Salud* (RIPS) records in Colombia.  
-This project creates a synchronized mirror of the original Azure Container Registry (ACR) images, retagging and distributing them via GitHub Container Registry (GHCR) for enhanced availability and notification purposes.
+**Espejo de Registro Docker** para la API y base de datos **FEV RIPS** utilizada para validar y procesar registros del *Registro Individual de Prestación de Servicios de Salud* (RIPS) en Colombia.  
+Este proyecto crea un espejo sincronizado de las imágenes originales del Azure Container Registry (ACR), retagueando y distribuyéndolas a través del GitHub Container Registry (GHCR) para mejorar la disponibilidad y propósitos de notificación.
 
-> 🔐 **Security Alert**: The default password `P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@` is provided for development purposes only. **Please change this password immediately** in production environments.
-
----
-
-## Purpose
-
-This repository serves as a **notification-enabled Docker registry mirror** for the Colombia FEV RIPS validation system. It automatically pulls images from the official Azure Container Registry, applies standardized tags, and redistributes them through GitHub Container Registry to ensure:
-
-- **Enhanced availability** - Multiple registry sources for critical healthcare validation services
-- **Notification capabilities** - GitHub-native notifications for image updates
-- **Standardized tagging** - Consistent version management across environments
-- **Access control** - Leveraging GitHub's permission system for team access
+> 🔐 **Alerta de Seguridad**: La contraseña por defecto `P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@` se proporciona solo para propósitos de desarrollo. **Por favor cambie esta contraseña inmediatamente** en entornos de producción.
 
 ---
 
-## Features
+## Propósito
 
-* **Registry Mirroring** - Automated synchronization from ACR to GHCR
-* **Production-ready images** – built and scanned by GitHub Actions, distributed via GHCR
-* **Secure defaults** – secrets are passed through Docker secrets / environment variables; no credentials stored in images
-* **Automated retag workflow** – every ACR image is pulled, re-tagged with `latest`, build date (`YYYYMMDD`) and run number, then pushed to GHCR
-* **Notification integration** - GitHub notifications for new image availability
-* **Health checks** - Built-in health monitoring for all services
-* **Multi-environment support** - Separate production and staging environments
-* **Resource limits** – container CPU / memory limits configured for predictable operation
-* **Declarative deployment** – single `docker compose` file to spin up API + SQL Server locally or in the cloud
+Este repositorio sirve como un **espejo de registro Docker habilitado para notificaciones** para el sistema de validación Colombia FEV RIPS. Automáticamente extrae imágenes del Azure Container Registry oficial, aplica etiquetas estandarizadas, y las redistribuye a través del GitHub Container Registry para asegurar:
+
+- **Disponibilidad mejorada** - Múltiples fuentes de registro para servicios críticos de validación de salud
+- **Capacidades de notificación** - Notificaciones nativas de GitHub para actualizaciones de imágenes
+- **Etiquetado estandarizado** - Gestión consistente de versiones a través de entornos
+- **Control de acceso** - Aprovechando el sistema de permisos de GitHub para acceso de equipo
 
 ---
 
-## Project Structure
+## Características
+
+* **Espejo de Registro** - Sincronización automatizada de ACR a GHCR
+* **Imágenes listas para producción** – construidas y escaneadas por GitHub Actions, distribuidas vía GHCR
+* **Valores por defecto seguros** – los secretos se pasan a través de Docker secrets / variables de entorno; no se almacenan credenciales en las imágenes
+* **Flujo de trabajo de reetiquetado automatizado** – cada imagen ACR se extrae, se re-etiqueta con `latest`, fecha de construcción (`YYYYMMDD`) y número de ejecución, luego se envía a GHCR
+* **Integración de notificaciones** - Notificaciones de GitHub para nueva disponibilidad de imágenes
+* **Verificaciones de salud** - Monitoreo de salud incorporado para todos los servicios
+* **Soporte multi-entorno** - Entornos de producción y staging separados
+* **Límites de recursos** – límites de CPU / memoria de contenedor configurados para operación predecible
+* **Despliegue declarativo** – un solo archivo `docker compose` para activar API + SQL Server localmente o en la nube
+
+---
+
+## Estructura del Proyecto
 
 ```
-├── fevrips-docker-compose.yml             # Complete multi-environment setup
+├── fevrips-docker-compose.yml             # Configuración completa multi-entorno
 ├── .github/workflows/
-│   └── retag-image.yml                    # CI: retag + push to GHCR (registry mirror)
+│   └── retag-image.yml                    # CI: reetiquetado + push a GHCR (espejo de registro)
 └── README.md
 ```
 
 ---
 
-## 🏗️ Docker Compose Configuration
+## 🏗️ Configuración de Docker Compose
 
-The `fevrips-docker-compose.yml` file provides a complete multi-environment setup:
+El archivo `fevrips-docker-compose.yml` proporciona una configuración completa multi-entorno:
 
-### Services Overview
-| Service | Port | Purpose | Health Check |
+### Resumen de Servicios
+| Servicio | Puerto | Propósito | Verificación de Salud |
 |---------|------|---------|--------------|
-| **fevrips-db** | 1433 | SQL Server 2022 database | SQL connectivity test |
-| **fevrips-api-prod** | 5100 | Production API service | HTTP endpoint test |
-| **fevrips-api-stage** | 5200 | Staging API service | HTTP endpoint test |
+| **fevrips-db** | 1433 | Base de datos SQL Server 2022 | Prueba de conectividad SQL |
+| **fevrips-api-prod** | 5100 | Servicio API de producción | Prueba de endpoint HTTP |
+| **fevrips-api-stage** | 5200 | Servicio API de staging | Prueba de endpoint HTTP |
 
-### Quick Local Deployment
+### Despliegue Local Rápido
 ```bash
-# Clone and start all services
+# Clonar e iniciar todos los servicios
 git clone https://github.com/PahVenture/colombia-fev-rips-docker-validator.git
 cd colombia-fev-rips-docker-validator
 docker-compose -f fevrips-docker-compose.yml up -d
 
-# Verify services are healthy
+# Verificar que los servicios estén saludables
 docker-compose -f fevrips-docker-compose.yml ps
 ```
 
 ---
 
-## Continuous Integration
+## Integración Continua
 
-| Workflow | Purpose | Source Registry | Target Registry |
+| Flujo de Trabajo | Propósito | Registro Fuente | Registro Destino |
 |----------|---------|-----------------|-----------------|
-| **retag-image.yml** | Manually triggered – pulls image from ACR, retags (`latest`, date, run #), pushes to GHCR | `crmspsgovcoprd.azurecr.io/production-fevrips-apilocal` | `ghcr.io/pahventure/colombia-fev-rips-docker-validator` |
+| **retag-image.yml** | Activación manual – extrae imagen de ACR, reetiqueta (`latest`, fecha, # ejecución), envía a GHCR | `crmspsgovcoprd.azurecr.io/production-fevrips-apilocal` | `ghcr.io/pahventure/colombia-fev-rips-docker-validator` |
 
-### Workflow Details
-- **Trigger**: Manual workflow dispatch
-- **Source**: Azure Container Registry (ACR)
-- **Target**: GitHub Container Registry (GHCR)
-- **Tags Applied**: `latest`, `YYYYMMDD`, `<run-number>`
-- **Security**: Uses digest-based referencing for immutability
+### Detalles del Flujo de Trabajo
+- **Activador**: Activación manual de flujo de trabajo
+- **Fuente**: Azure Container Registry (ACR)
+- **Destino**: GitHub Container Registry (GHCR)
+- **Etiquetas Aplicadas**: `latest`, `YYYYMMDD`, `<número-ejecución>`
+- **Seguridad**: Usa referenciación basada en digest para inmutabilidad
 
-Example run: [GitHub Actions #16235526076](https://github.com/PahVenture/colombia-fev-rips-docker-validator/actions/runs/16235526076)
+Ejemplo de ejecución: [GitHub Actions #16235526076](https://github.com/PahVenture/colombia-fev-rips-docker-validator/actions/runs/16235526076)
 
 ---
 
-## Configuration
+## Configuración
 
-### Environment Variables
-| Variable | Location | Description | Example |
+### Variables de Entorno
+| Variable | Ubicación | Descripción | Ejemplo |
 |----------|----------|-------------|---------|
-| `ACR_USERNAME` / `ACR_PASSWORD` | **GitHub Secrets** | Credentials for Azure Container Registry access | - |
-| `MSSQL_SA_PASSWORD` | **Docker Compose** | SQL Server administrator password | ⚠️ **Change from default** |
-| `ASPNETCORE_ENVIRONMENT` | **Docker Compose** | ASP.NET Core environment | `DockerProduction` |
-| `ASPNETCORE_URLS` | **Docker Compose** | API binding URL | `http://+:5100` |
+| `ACR_USERNAME` / `ACR_PASSWORD` | **GitHub Secrets** | Credenciales para acceso al Azure Container Registry | - |
+| `MSSQL_SA_PASSWORD` | **Docker Compose** | Contraseña de administrador de SQL Server | ⚠️ **Cambiar del valor por defecto** |
+| `ASPNETCORE_ENVIRONMENT` | **Docker Compose** | Entorno ASP.NET Core | `DockerProduction` |
+| `ASPNETCORE_URLS` | **Docker Compose** | URL de enlace de la API | `http://+:5100` |
 
-### Security Configuration
-> 🔒 **Important Security Notes**:
-> - **Change the default password** `P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@` immediately
-> - Use Docker secrets for production deployments
-> - Enable TLS certificates for production environments
-> - Configure proper firewall rules
+### Configuración de Seguridad
+> 🔒 **Notas Importantes de Seguridad**:
+> - **Cambie la contraseña por defecto** `P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@` inmediatamente
+> - Use Docker secrets para despliegues de producción
+> - Habilite certificados TLS para entornos de producción
+> - Configure reglas de firewall apropiadas
 
 ---
 
-## Using the Registry Mirror
+## Usando el Espejo de Registro
 
-### Pulling Images
+### Extrayendo Imágenes
 ```bash
-# Latest stable version
+# Versión estable más reciente
 docker pull ghcr.io/pahventure/colombia-fev-rips-docker-validator:latest
 
-# Specific date version
+# Versión de fecha específica
 docker pull ghcr.io/pahventure/colombia-fev-rips-docker-validator:20241207
 
-# Specific build version
+# Versión de construcción específica
 docker pull ghcr.io/pahventure/colombia-fev-rips-docker-validator:42
 ```
 
-### Running Individual Services
+### Ejecutando Servicios Individuales
 ```bash
-# Database only
+# Solo base de datos
 docker run -d --name fevrips-db \
   -e ACCEPT_EULA=Y \
-  -e MSSQL_SA_PASSWORD=YourSecurePassword123! \
+  -e MSSQL_SA_PASSWORD=TuContraseñaSegura123! \
   -p 1433:1433 \
   mcr.microsoft.com/mssql/server:2022-CU12-ubuntu-22.04
 
-# API service (connects to external database)
+# Servicio API (conecta a base de datos externa)
 docker run -d --name fevrips-api \
   -e ASPNETCORE_ENVIRONMENT=DockerProduction \
-  -e ConnectionStrings__DefaultConnection="Server=your-db-server;Database=FEVRIPS;User Id=sa;Password=YourSecurePassword123!;TrustServerCertificate=True;" \
+  -e ConnectionStrings__DefaultConnection="Server=tu-servidor-bd;Database=FEVRIPS;User Id=sa;Password=TuContraseñaSegura123!;TrustServerCertificate=True;" \
   -p 8080:5100 \
   ghcr.io/pahventure/colombia-fev-rips-docker-validator:latest
 ```
 
 ---
 
-## Updating Images
+## Actualizando Imágenes
 
-To publish a new version from ACR to GHCR:
+Para publicar una nueva versión de ACR a GHCR:
 
-1. Browse to **Actions > Retag & Push Image**
-2. Click **Run workflow**, supply a tag or a digest (e.g. `sha256:…`)
-3. The workflow will retag and push:
+1. Navega a **Actions > Retag & Push Image**
+2. Haz clic en **Run workflow**, proporciona una etiqueta o un digest (ej. `sha256:…`)
+3. El flujo de trabajo reetiquetará y enviará:
    * `ghcr.io/pahventure/colombia-fev-rips-docker-validator:latest`
    * `ghcr.io/pahventure/colombia-fev-rips-docker-validator:YYYYMMDD`
-   * `ghcr.io/pahventure/colombia-fev-rips-docker-validator:<run-number>`
+   * `ghcr.io/pahventure/colombia-fev-rips-docker-validator:<número-ejecución>`
 
 ---
 
-## API Documentation
+## Documentación de la API
 
 ### Endpoints
-- **POST /api/rips/validate** - Validate RIPS file
-- **GET /health** - Health check endpoint
-- **GET /api/version** - API version information
+- **POST /api/rips/validate** - Validar archivo RIPS
+- **GET /health** - Endpoint de verificación de salud
+- **GET /api/version** - Información de versión de la API
 
-### Example Usage
+### Ejemplo de Uso
 ```bash
-# Health check
+# Verificación de salud
 curl http://localhost:5100/health
 
-# Validate RIPS file
+# Validar archivo RIPS
 curl -X POST http://localhost:5100/api/rips/validate \
   -H "Content-Type: application/json" \
-  -d @rips-data.json
+  -d @datos-rips.json
 ```
 
 ---
 
-## Best Practices Followed
+## Mejores Prácticas Seguidas
 
-* **Registry mirroring** - Ensures high availability and redundancy for critical healthcare services
-* **Principle of least privilege** – GH Actions job requests read-only `contents` and `write` on `packages` only
-* **Images are referenced by digest** during retagging to guarantee immutability
-* **All repository paths pushed to GHCR** are forced `lowercase` to satisfy OCI spec
-* **SQL Server memory limits** applied to prevent host exhaustion
-* **Secrets never stored** in the repository
-* **Health checks** - All services include comprehensive health monitoring
-* **Multi-stage environments** - Separate production and staging deployments
+* **Espejo de registro** - Asegura alta disponibilidad y redundancia para servicios críticos de salud
+* **Principio de menor privilegio** – el trabajo de GH Actions solicita solo `contents` de solo lectura y `write` en `packages`
+* **Las imágenes se referencian por digest** durante el reetiquetado para garantizar inmutabilidad
+* **Todas las rutas de repositorio enviadas a GHCR** se fuerzan a `minúsculas` para satisfacer la especificación OCI
+* **Límites de memoria de SQL Server** aplicados para prevenir agotamiento del host
+* **Los secretos nunca se almacenan** en el repositorio
+* **Verificaciones de salud** - Todos los servicios incluyen monitoreo integral de salud
+* **Entornos multi-etapa** - Despliegues de producción y staging separados
 
 ---
 
-## About PahVenture
+## Acerca de PahVenture
 
-This project is maintained by **PahVenture**, a forward-thinking software development and venture capital company specializing in AI-driven development, custom software solutions, and strategic technology investments.
+Este proyecto es mantenido por **PahVenture**, una empresa visionaria de desarrollo de software y capital de riesgo especializada en desarrollo impulsado por IA, soluciones de software personalizadas e inversiones tecnológicas estratégicas.
 
-- **Website**: [https://pahventure.com](https://pahventure.com)
+- **Sitio web**: [https://pahventure.com](https://pahventure.com)
 - **Email**: [dev@pahventure.com](mailto:dev@pahventure.com)
 - **GitHub**: [@PahVenture](https://github.com/PahVenture)
-- **Hosted API**: [https://fevrips.pahventure.com/services](https://fevrips.pahventure.com/services)
+- **API Hospedada**: [https://fevrips.pahventure.com/services](https://fevrips.pahventure.com/services)
 
 ---
 
-## Contributing
+## Contribuyendo
 
-Pull-requests are welcome! Please:
+¡Los pull-requests son bienvenidos! Por favor:
 
-1. Fork the repo & create a feature branch
-2. Follow existing code style and registry mirroring conventions
-3. Test the registry mirroring workflow locally
-4. Open a PR against `main` with a clear description
-
----
-
-## License
-
-This project is licensed under the **MIT License** – see [LICENSE](LICENSE) for details.
+1. Haz fork del repositorio y crea una rama de característica
+2. Sigue el estilo de código existente y las convenciones de espejo de registro
+3. Prueba el flujo de trabajo de espejo de registro localmente
+4. Abre un PR contra `main` con una descripción clara
 
 ---
 
-## Acknowledgements
+## Licencia
 
-* **Colombian Ministry of Health** - For FEV RIPS guidelines and validation logic
-* **Microsoft** - SQL Server container and Azure Container Registry
-* **GitHub** - Actions & GHCR for CI/CD and registry hosting
-* **PahVenture** - For maintaining this registry mirror, hosted API service, and notification system
+Este proyecto está licenciado bajo la **Licencia MIT** – consulta [LICENSE](LICENSE) para detalles.
+
+---
+
+## Reconocimientos
+
+* **Ministerio de Salud de Colombia** - Por las pautas FEV RIPS y lógica de validación
+* **Microsoft** - Contenedor SQL Server y Azure Container Registry
+* **GitHub** - Actions y GHCR para CI/CD y hosting de registro
+* **PahVenture** - Por mantener este espejo de registro, servicio de API hospedado y sistema de notificaciones
