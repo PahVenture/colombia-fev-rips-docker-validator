@@ -1,0 +1,19 @@
+{{- if .Values.api.production.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fevrips.fullname" . }}-api-prod
+  labels:
+    {{- include "fevrips.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-production
+spec:
+  type: {{ .Values.api.production.service.type }}
+  ports:
+    - port: {{ .Values.api.production.service.port }}
+      targetPort: {{ .Values.api.production.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "fevrips.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api-production
+{{- end }}

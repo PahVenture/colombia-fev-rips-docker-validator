@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fevrips.fullname" . }}-db
+  labels:
+    {{- include "fevrips.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  type: ClusterIP
+  ports:
+    - port: 1433
+      targetPort: mssql
+      protocol: TCP
+      name: mssql
+  selector:
+    {{- include "fevrips.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: database

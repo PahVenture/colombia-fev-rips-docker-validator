@@ -1,0 +1,51 @@
+1. Get the application URL by running these commands:
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if contains "NodePort" .Values.api.production.service.type }}
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "fevrips.fullname" . }}-api-prod)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.api.production.service.type }}
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "fevrips.fullname" . }}-api-prod'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "fevrips.fullname" . }}-api-prod --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.api.production.service.port }}
+{{- else if contains "ClusterIP" .Values.api.production.service.type }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "fevrips.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=api-production" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+
+2. Check the health status:
+{{- if .Values.api.production.enabled }}
+  kubectl get pods -l "app.kubernetes.io/component=api-production"
+{{- end }}
+{{- if .Values.api.staging.enabled }}
+  kubectl get pods -l "app.kubernetes.io/component=api-staging"
+{{- end }}
+  kubectl get pods -l "app.kubernetes.io/component=database"
+
+3. Access the staging API (if enabled):
+{{- if .Values.api.staging.enabled }}
+  export STAGE_POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "fevrips.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=api-staging" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $STAGE_POD_NAME 8081:5100
+  # Then visit http://127.0.0.1:8081
+{{- end }}
+
+4. Check application logs:
+  kubectl logs -f deployment/{{ include "fevrips.fullname" . }}-api-prod
+{{- if .Values.api.staging.enabled }}
+  kubectl logs -f deployment/{{ include "fevrips.fullname" . }}-api-stage
+{{- end }}
+  kubectl logs -f statefulset/{{ include "fevrips.fullname" . }}-db
+
+⚠️  SECURITY WARNING: Please change the default database password immediately!
+The default password is visible in the values.yaml file and should be updated for production use.
+
+For more information about this chart, visit:
+https://github.com/PahVenture/colombia-fev-rips-docker-validator

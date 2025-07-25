@@ -1,0 +1,18 @@
+apiVersion: v2
+name: fevrips
+description: A Helm chart for Colombia FEV RIPS Docker Validator
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - colombia
+  - health
+  - rips
+  - validator
+home: https://github.com/PahVenture/colombia-fev-rips-docker-validator
+sources:
+  - https://github.com/PahVenture/colombia-fev-rips-docker-validator
+maintainers:
+  - name: PahVenture
+    email: dev@pahventure.com
+    url: https://pahventure.com

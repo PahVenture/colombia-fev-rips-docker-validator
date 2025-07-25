@@ -40,6 +40,12 @@ This repository serves as a **notification-enabled Docker registry mirror** for 
 
 ```
 ├── fevrips-docker-compose.yml             # Complete multi-environment setup
+├── helm/fevrips/                          # Helm chart for Kubernetes deployment
+│   ├── Chart.yaml                         # Chart metadata
+│   ├── values.yaml                        # Default configuration values
+│   ├── values-production.yaml             # Production environment values
+│   ├── values-development.yaml            # Development environment values
+│   └── templates/                         # Kubernetes resource templates
 ├── .github/workflows/
 │   └── retag-image.yml                    # CI: retag + push to GHCR (registry mirror)
 └── README.md
@@ -68,6 +74,195 @@ docker-compose -f fevrips-docker-compose.yml up -d
 # Verify services are healthy
 docker-compose -f fevrips-docker-compose.yml ps
 ```
+
+---
+
+## ⎈ Helm Kubernetes Deployment
+
+The project includes a comprehensive Helm chart for Kubernetes deployment, providing the same functionality as Docker Compose with additional Kubernetes-native features.
+
+### Kubernetes Services Overview
+| Component | Type | Purpose | Features |
+|-----------|------|---------|----------|
+| **Database** | StatefulSet | SQL Server with persistent storage | Health checks, resource limits, persistence |
+| **Production API** | Deployment | Production API service | Auto-scaling, rolling updates, health checks |
+| **Staging API** | Deployment | Staging API service | Configurable replicas, resource limits |
+| **Services** | ClusterIP/NodePort | Internal communication | Load balancing, service discovery |
+| **Ingress** | Optional | External access | TLS termination, path-based routing |
+
+### Quick Kubernetes Deployment
+
+#### Prerequisites
+```bash
+# Ensure you have Helm 3.x installed
+helm version
+
+# Ensure kubectl is configured for your cluster
+kubectl cluster-info
+```
+
+#### Development Deployment
+```bash
+# Clone the repository
+git clone https://github.com/PahVenture/colombia-fev-rips-docker-validator.git
+cd colombia-fev-rips-docker-validator
+
+# Deploy with development settings
+helm install fevrips-dev helm/fevrips -f helm/fevrips/values-development.yaml
+
+# Check deployment status
+kubectl get pods
+kubectl get services
+
+# Access the application (development uses NodePort)
+kubectl get svc fevrips-dev-api-prod -o jsonpath='{.spec.ports[0].nodePort}'
+# Visit http://<node-ip>:<node-port>
+```
+
+#### Production Deployment
+```bash
+# Create namespace for production
+kubectl create namespace fevrips-prod
+
+# Create secret for database credentials (recommended for production)
+kubectl create secret generic fevrips-db-credentials \
+  --from-literal=sa-password='YourSecureProductionPassword!' \
+  -n fevrips-prod
+
+# Deploy with production settings
+helm install fevrips-prod helm/fevrips \
+  -f helm/fevrips/values-production.yaml \
+  -n fevrips-prod \
+  --set database.auth.existingSecret=fevrips-db-credentials
+
+# Enable autoscaling
+kubectl autoscale deployment fevrips-prod-api-prod \
+  --cpu-percent=70 \
+  --min=2 \
+  --max=10 \
+  -n fevrips-prod
+```
+
+### Helm Configuration Options
+
+#### Database Configuration
+```yaml
+database:
+  persistence:
+    enabled: true          # Enable persistent storage
+    storageClass: "fast"   # Storage class name
+    size: 20Gi            # Storage size
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  
+  auth:
+    existingSecret: ""     # Use existing secret for credentials
+    rootPassword: ""       # Database password (if not using existing secret)
+```
+
+#### API Configuration
+```yaml
+api:
+  production:
+    enabled: true
+    replicaCount: 3
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  
+  staging:
+    enabled: true          # Enable/disable staging environment
+    replicaCount: 1
+```
+
+#### Ingress Configuration
+```yaml
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: fevrips.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: fevrips-tls
+      hosts:
+        - fevrips.company.com
+```
+
+### Helm Commands Reference
+
+```bash
+# Install or upgrade
+helm upgrade --install fevrips helm/fevrips
+
+# Uninstall
+helm uninstall fevrips
+
+# View generated templates
+helm template fevrips helm/fevrips
+
+# Validate chart
+helm lint helm/fevrips
+
+# Get deployment status
+helm status fevrips
+
+# View configuration values
+helm get values fevrips
+
+# Rollback to previous version
+helm rollback fevrips 1
+```
+
+### Monitoring and Troubleshooting
+
+```bash
+# Check pod status
+kubectl get pods -l app.kubernetes.io/name=fevrips
+
+# View logs
+kubectl logs -f deployment/fevrips-api-prod
+kubectl logs -f statefulset/fevrips-db
+
+# Check services
+kubectl get svc -l app.kubernetes.io/name=fevrips
+
+# Port forward for local access
+kubectl port-forward svc/fevrips-api-prod 8080:5100
+
+# Check ingress
+kubectl get ingress fevrips
+
+# View events
+kubectl get events --sort-by=.metadata.creationTimestamp
+```
+
+### Automated Deployment Script
+
+For simplified deployment, use the included deployment script:
+
+```bash
+# Development deployment
+./helm/deploy.sh development
+
+# Production deployment
+DB_PASSWORD="YourSecurePassword123!" ./helm/deploy.sh production fevrips-prod
+
+# Custom deployment with specific release name
+./helm/deploy.sh development my-fevrips-test
+```
+
+The script automatically:
+- Creates the namespace
+- Handles database credentials for production
+- Applies the appropriate values file
+- Provides post-deployment instructions
 
 ---
 

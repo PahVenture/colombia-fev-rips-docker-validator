@@ -1,0 +1,75 @@
+# Development values for FEV RIPS
+# Override default values for development/testing
+
+# Use default credentials for development
+database:
+  # Smaller resources for development
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 250m
+      memory: 1Gi
+  
+  # Disable persistence for development (data will be lost on restart)
+  persistence:
+    enabled: false
+
+# API configuration for development
+api:
+  production:
+    enabled: true
+    replicaCount: 1  # Single replica for development
+    
+    service:
+      type: NodePort  # Use NodePort for easy local access
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  
+  staging:
+    enabled: true
+    replicaCount: 1
+    
+    service:
+      type: NodePort
+    
+    resources:
+      limits:
+        cpu: 250m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi
+
+# Enable ingress for local development
+ingress:
+  enabled: true
+  className: ""
+  hosts:
+    - host: fevrips.local
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: fevrips-api-prod
+              port:
+                number: 5100
+        - path: /stage
+          pathType: Prefix
+          backend:
+            service:
+              name: fevrips-api-stage
+              port:
+                number: 5100
+
+# Disable autoscaling for development
+autoscaling:
+  enabled: false

@@ -1,0 +1,198 @@
+# Default values for fevrips.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  imageRegistry: ghcr.io
+  imagePullSecrets: []
+
+# Database configuration
+database:
+  image:
+    registry: mcr.microsoft.com
+    repository: mssql/server
+    tag: "2022-CU12-ubuntu-22.04"
+    pullPolicy: Always
+  
+  # Database credentials
+  auth:
+    rootPassword: "P4hv3ntur3!R3c0m31nd4#C4mb14r3st4Cl4v3@"
+    existingSecret: ""
+    secretKeys:
+      rootPasswordKey: "sa-password"
+  
+  # Database configuration
+  collation: "SQL_Latin1_General_CP1_CI_AS"
+  acceptEula: true
+  
+  # Persistence
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi
+  
+  # Resource limits
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 2Gi
+  
+  # Health checks
+  healthcheck:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+    successThreshold: 1
+
+# API configuration
+api:
+  image:
+    registry: ghcr.io
+    repository: pahventure/colombia-fev-rips-docker-validator
+    tag: "latest"
+    pullPolicy: Always
+  
+  # Environment settings
+  aspnetcore:
+    environment: "DockerProduction"
+    urls: "http://+:5100"
+  
+  # Logging configuration
+  logging:
+    logLevel:
+      default: "Information"
+  
+  # Production environment
+  production:
+    enabled: true
+    replicaCount: 1
+    database: "FEVRIPS-prod"
+    
+    service:
+      type: ClusterIP
+      port: 5100
+      targetPort: 5100
+    
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    
+    # Health checks
+    healthcheck:
+      enabled: true
+      initialDelaySeconds: 40
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+      successThreshold: 1
+      path: "/health"
+  
+  # Staging environment
+  staging:
+    enabled: true
+    replicaCount: 1
+    database: "FEVRIPS-stage"
+    
+    service:
+      type: ClusterIP
+      port: 5100
+      targetPort: 5100
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    
+    # Health checks
+    healthcheck:
+      enabled: true
+      initialDelaySeconds: 40
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+      successThreshold: 1
+      path: "/health"
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: fevrips.local
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: fevrips-api-prod
+              port:
+                number: 5100
+        - path: /stage
+          pathType: Prefix
+          backend:
+            service:
+              name: fevrips-api-stage
+              port:
+                number: 5100
+  tls: []
+  #  - secretName: fevrips-tls
+  #    hosts:
+  #      - fevrips.local
+
+# Service Account
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Pod Security Context
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# Security Context
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Autoscaling (disabled by default for database workloads)
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80

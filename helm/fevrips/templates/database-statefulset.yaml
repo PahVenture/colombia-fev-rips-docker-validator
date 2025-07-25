@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "fevrips.fullname" . }}-db
+  labels:
+    {{- include "fevrips.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  serviceName: {{ include "fevrips.fullname" . }}-db
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "fevrips.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        {{- include "fevrips.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: database
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fevrips.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: mssql
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "fevrips.database.image" . }}
+          imagePullPolicy: {{ .Values.database.image.pullPolicy }}
+          ports:
+            - name: mssql
+              containerPort: 1433
+              protocol: TCP
+          env:
+            - name: ACCEPT_EULA
+              value: {{ .Values.database.acceptEula | quote }}
+            - name: MSSQL_COLLATION
+              value: {{ .Values.database.collation | quote }}
+            {{- if .Values.database.auth.existingSecret }}
+            - name: MSSQL_SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.auth.existingSecret }}
+                  key: {{ .Values.database.auth.secretKeys.rootPasswordKey }}
+            {{- else }}
+            - name: MSSQL_SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "fevrips.fullname" . }}-db-secret
+                  key: {{ .Values.database.auth.secretKeys.rootPasswordKey }}
+            {{- end }}
+          {{- if .Values.database.healthcheck.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -Q 'SELECT 1' || exit 1
+            initialDelaySeconds: {{ .Values.database.healthcheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.database.healthcheck.periodSeconds }}
+            timeoutSeconds: {{ .Values.database.healthcheck.timeoutSeconds }}
+            failureThreshold: {{ .Values.database.healthcheck.failureThreshold }}
+            successThreshold: {{ .Values.database.healthcheck.successThreshold }}
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -Q 'SELECT 1' || exit 1
+            initialDelaySeconds: {{ .Values.database.healthcheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.database.healthcheck.periodSeconds }}
+            timeoutSeconds: {{ .Values.database.healthcheck.timeoutSeconds }}
+            failureThreshold: {{ .Values.database.healthcheck.failureThreshold }}
+            successThreshold: {{ .Values.database.healthcheck.successThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.database.resources | nindent 12 }}
+          {{- if .Values.database.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/opt/mssql
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.database.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          {{- range .Values.database.persistence.accessModes }}
+          - {{ . | quote }}
+          {{- end }}
+        {{- if .Values.database.persistence.storageClass }}
+        {{- if (eq "-" .Values.database.persistence.storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: {{ .Values.database.persistence.storageClass | quote }}
+        {{- end }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.database.persistence.size | quote }}
+  {{- end }}
