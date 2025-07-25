@@ -1,0 +1,88 @@
+# Production values for FEV RIPS
+# Override default values for production deployment
+
+# Use existing secret for database credentials
+database:
+  auth:
+    existingSecret: "fevrips-db-credentials"
+    rootPassword: ""  # Will be read from secret
+  
+  # Enable persistence with larger storage
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 50Gi
+  
+  # Production resource limits
+  resources:
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+
+# API configuration for production
+api:
+  # Use specific image tag for production
+  image:
+    tag: "20241207"  # Use specific date tag instead of latest
+  
+  production:
+    enabled: true
+    replicaCount: 3  # Multiple replicas for high availability
+    
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+  
+  staging:
+    enabled: false  # Disable staging in production
+
+# Enable ingress with TLS
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  
+  hosts:
+    - host: fevrips.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: fevrips-api-prod
+              port:
+                number: 5100
+  
+  tls:
+    - secretName: fevrips-tls
+      hosts:
+        - fevrips.company.com
+
+# Enable autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Node affinity for production workloads
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/environment
+          operator: In
+          values:
+          - production

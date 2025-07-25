@@ -1,0 +1,19 @@
+{{- if .Values.api.staging.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "fevrips.fullname" . }}-api-stage
+  labels:
+    {{- include "fevrips.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-staging
+spec:
+  type: {{ .Values.api.staging.service.type }}
+  ports:
+    - port: {{ .Values.api.staging.service.port }}
+      targetPort: {{ .Values.api.staging.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "fevrips.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api-staging
+{{- end }}

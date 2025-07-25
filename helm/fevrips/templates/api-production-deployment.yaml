@@ -1,0 +1,83 @@
+{{- if .Values.api.production.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fevrips.fullname" . }}-api-prod
+  labels:
+    {{- include "fevrips.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-production
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.api.production.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "fevrips.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api-production
+  template:
+    metadata:
+      labels:
+        {{- include "fevrips.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api-production
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fevrips.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: api
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "fevrips.api.image" . }}
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5100
+              protocol: TCP
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "fevrips.fullname" . }}-db-secret
+                  key: connection-string-prod
+          envFrom:
+            - configMapRef:
+                name: {{ include "fevrips.fullname" . }}-config
+          {{- if .Values.api.production.healthcheck.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.api.production.healthcheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.api.production.healthcheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.api.production.healthcheck.periodSeconds }}
+            timeoutSeconds: {{ .Values.api.production.healthcheck.timeoutSeconds }}
+            failureThreshold: {{ .Values.api.production.healthcheck.failureThreshold }}
+            successThreshold: {{ .Values.api.production.healthcheck.successThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.api.production.healthcheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.api.production.healthcheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.api.production.healthcheck.periodSeconds }}
+            timeoutSeconds: {{ .Values.api.production.healthcheck.timeoutSeconds }}
+            failureThreshold: {{ .Values.api.production.healthcheck.failureThreshold }}
+            successThreshold: {{ .Values.api.production.healthcheck.successThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.api.production.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

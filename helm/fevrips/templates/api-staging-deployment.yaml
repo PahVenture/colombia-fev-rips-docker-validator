@@ -1,0 +1,83 @@
+{{- if .Values.api.staging.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "fevrips.fullname" . }}-api-stage
+  labels:
+    {{- include "fevrips.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api-staging
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.api.staging.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "fevrips.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api-staging
+  template:
+    metadata:
+      labels:
+        {{- include "fevrips.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api-staging
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fevrips.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: api
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "fevrips.api.image" . }}
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5100
+              protocol: TCP
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "fevrips.fullname" . }}-db-secret
+                  key: connection-string-stage
+          envFrom:
+            - configMapRef:
+                name: {{ include "fevrips.fullname" . }}-config
+          {{- if .Values.api.staging.healthcheck.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.api.staging.healthcheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.api.staging.healthcheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.api.staging.healthcheck.periodSeconds }}
+            timeoutSeconds: {{ .Values.api.staging.healthcheck.timeoutSeconds }}
+            failureThreshold: {{ .Values.api.staging.healthcheck.failureThreshold }}
+            successThreshold: {{ .Values.api.staging.healthcheck.successThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.api.staging.healthcheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.api.staging.healthcheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.api.staging.healthcheck.periodSeconds }}
+            timeoutSeconds: {{ .Values.api.staging.healthcheck.timeoutSeconds }}
+            failureThreshold: {{ .Values.api.staging.healthcheck.failureThreshold }}
+            successThreshold: {{ .Values.api.staging.healthcheck.successThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.api.staging.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
